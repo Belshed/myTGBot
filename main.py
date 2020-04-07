@@ -211,7 +211,7 @@ def start(update, context):
     context.bot.send_sticker(chat_id=update.effective_chat.id,
                              sticker=open('start_sticker.webp', 'rb'))
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="<b>Эй, " + update.effective_user.first_name + "!" + "\nЯ бот и я работаю!</b>\nДля получения информации нажми /info или отправь мне «Инфо»",
+                             text="<b>Эй, " + update.effective_user.first_name + "!" + "\nЯ бот и я работаю!</b>\nДля получения информации нажми \n/info или отправь мне «Инфо»",
                              parse_mode='html')
 
 
