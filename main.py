@@ -6,7 +6,7 @@ import requests
 from covid import Covid
 from threading import Timer
 from bs4 import BeautifulSoup
-from translate import Translator
+from googletrans import Translator
 from telegram import KeyboardButton
 from telegram import ReplyKeyboardMarkup
 from telegram import ReplyKeyboardRemove
@@ -27,12 +27,15 @@ covid = Covid(source="worldometers")
 response = requests.get(target_url)
 covid_data = covid.get_data()
 
-translator = Translator(from_lang="english", to_lang="russian")
+translator = Translator()
 
 world_pos = 0
 virusData = ""
 country_list = []
-rus_country_list = ['Мир', 'США', 'Испания', 'Италия', 'Германия', 'Франция', 'Иран', 'Великобритания', 'Турция', 'Швейцария', 'Бельгия', 'Нидерланды', 'Канада', 'Австрия', 'Бразилия', 'Португалия', 'Южная Корея', 'Израиль', 'Швеция', 'Россия', 'Норвегия', 'Австралия', 'Ирландия', 'Чехия', 'Чили', 'Индия',
+listt = []
+rus_country_list = []
+
+in_emergancy_case = ['Мир', 'США', 'Испания', 'Италия', 'Германия', 'Франция', 'Иран', 'Великобритания', 'Турция', 'Швейцария', 'Бельгия', 'Нидерланды', 'Канада', 'Австрия', 'Бразилия', 'Португалия', 'Южная Корея', 'Израиль', 'Швеция', 'Россия', 'Норвегия', 'Австралия', 'Ирландия', 'Чехия', 'Чили', 'Индия',
                     'Дания', 'Польша', 'Румыния', 'Малайзия', 'Пакистан', 'Эквадор', 'Филиппины', 'Япония', 'Люксембург', 'Саудовская Аравия', 'Перу', 'Индонезия', 'Таиланд', 'Сербия', 'Финляндия', 'Мексика', 'ОАЭ', 'Панама', 'Катар', 'Доминиканская Республика', 'Греция', 'Южная Африка', 'Колумбия', 'Исландия',
                     'Аргентина', 'Алжир', 'Сингапур', 'Египет', 'Украина', 'Хорватия', 'Марокко', 'Эстония', 'Новая Зеландия', 'Ирак', 'Словения', 'Молдова', 'Гонконг', 'Литва', 'Армения', 'Бахрейн', 'Венгрия', 'Алмазная принцесса', 'Беларусь', 'Босния и Герцеговина', 'Кувейт', 'Казахстан', 'Камерун', 'Азербайджан',
                     'Тунис', 'Северная Македония', 'Болгария', 'Латвия', 'Ливан', 'Словакия', 'Андорра', 'Коста Рика', 'Кипр', 'Узбекистан', 'Уругвай', 'Албания', 'Тайвань', 'Катар', 'Буркина Фасо', 'Куба', 'Иордания', 'Реюньон', 'Оман', 'Нормандские острова', "Кот д'Ивуар", 'Гондурас', 'Сан-Марино', 'Палестина', 'Нигер',
@@ -41,9 +44,6 @@ rus_country_list = ['Мир', 'США', 'Испания', 'Италия', 'Ге�
                     'Багамские острова', 'Бенин', 'Габон', 'Гаити', 'Танзания', 'Мьянма', 'Сирия', 'Ливия', 'Мальдивы', 'Гвинея-Бисау', 'Новая Каледония', 'Ангола', 'Экваториальная Гвинея', 'Намибия', 'Антигуа и Барбуда', 'Доминика', 'Монголия', 'Либерия', 'Фиджи', 'Сент-Люсия', 'Кюрасао', 'Судан', 'Гренада', 'Лаос', 'Гренландия', 'Сейшельские острова',
                     'Суринам', 'Зимбабве', 'Мозамбик', 'Сент-Китс и Невис', 'Eswatini', 'М.С. Зандам', 'Непал', 'Чад', 'Теркс и Кайкос', 'ЦАР', 'Белиз', 'Кабо Верде', 'Ватикан', 'Сент-Винсент и Гренадины', 'Сомали', 'Ботсвана', 'Мавритания', 'Никарагуа', 'Монсеррат', 'Сен-Барт', 'Сьерра-Леоне', 'Бутан', 'Малави', 'Гамбия', 'Сан-Томе и Принсипи', 'Западная Сахара',
                     'Ангилья', 'Британские Виргинские острова', 'Бурунди', 'Карибские острова Нидерланды', 'Фолклендские острова', 'Папуа - Новая Гвинея', 'Saint Pierre & Miquelon', 'Южный Судан', 'Восточный Тимор', 'Китай']
-
-for elem in covid_data:
-    country_list.append(elem.get('country'))
 
 '''
 for elem in country_list:
@@ -59,7 +59,7 @@ global_statistic_dict = {}
 countdown_name =    [
                      "Проведено тестов: ",
                      "Случаев заболевания: ",
-                     "Случай заболевания за последние сутки: ",
+                     "Случаев заболевания за сегодня: ",
                      "Человек выздоровело: ",
                      "Человек умерло: "
                     ]
@@ -72,38 +72,61 @@ worldometers_info = [
                     ]
 
 print('Стартуем!\n')
-a = time.strftime("%H.%M", time.localtime())
-print(a)
+curr_time = time.strftime("%H:%M:%S", time.localtime())
+print(curr_time)
+logger.info(f'Deploying time: {curr_time}')
+
 '''
 /////////// ФУНКЦИИ ОБНОВЛЕНИЯ ДАННЫХ ///////////
 '''
 
+def update_country_list():
+    global country_list
+    global rus_country_list
+    for elem in covid_data:
+        country_list.append(elem.get('country'))
+
+    translations = translator.translate(country_list, dest='ru')
+
+    for translation in translations:
+        if translation.text == 'индейка':
+            rus_country_list.append('турция')
+        else:
+            rus_country_list.append(translation.text.lower())
+
+    for country in country_list:
+        country_list[country_list.index(country)] = country.lower()
+
 
 def daemon_covid_update():
-    Timer(120, daemon_covid_update).start()
+    Timer(600, daemon_covid_update).start()
     global covid
     covid = Covid(source="worldometers")
     global covid_data
     covid_data = covid.get_data()
     global response
     response = requests.get(target_url)
+    update_country_list()
     if time.strftime("%H", time.localtime()) == '11':
         pass
+    logger.info("Data update done!")
+    print(country_list)
+    print(rus_country_list)
 
 
 def get_data_by_country(country):
     if country in country_list:
-        logger.info(country)
         country_dict = covid.get_status_by_country_name(country)
-        data = rus_country_list[country_list.index(country)] + '\n'
-    elif country in rus_country_list:
-        logger.info(country)
-        country_dict = covid.get_status_by_country_name(country_list[rus_country_list.index(country)])
-        data = country.lower().title() + '\n'
-    else:
-        logger.error(f"{country}-Такой страны не найдено")
-        return f"{country}-Такой страны не найдено"
+        data = rus_country_list[country_list.index(country)].title() + '\n\n'
 
+    elif country in rus_country_list:
+        country_dict = covid.get_status_by_country_name(country_list[rus_country_list.index(country)])
+        data = country.lower().title() + '\n\n'
+
+    else:
+        logger.error(f"{country.title()}-Такой страны не найдено")
+        return f"{country.title()}-Такой страны не найдено"
+    logger.info(f" Searching {country.title()}")
     i = 1
     while i < (len(countdown_name)):
         data += str(countdown_name[i]) + str(country_dict[worldometers_info[i - 1]]) + '\n'
@@ -167,11 +190,11 @@ reply_markup = ReplyKeyboardMarkup(
 
 def get_inline_keyboard():
     inline_markup = [
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index('Russia')], callback_data='Russia'), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[1])], callback_data=country_list[1])],
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[2])], callback_data=country_list[2]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[3])], callback_data=country_list[3])],
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[4])], callback_data=country_list[4]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[5])], callback_data=country_list[5])],
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[6])], callback_data=country_list[6]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[7])], callback_data=country_list[7])],
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[8])], callback_data=country_list[8]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[9])], callback_data=country_list[9])]
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index('russia')].title(), callback_data='russia'), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[1])].title(), callback_data=country_list[1])],
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[2])].title(), callback_data=country_list[2]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[3])].title(), callback_data=country_list[3])],
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[4])].title(), callback_data=country_list[4]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[5])].title(), callback_data=country_list[5])],
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[6])].title(), callback_data=country_list[6]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[7])].title(), callback_data=country_list[7])],
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[8])].title(), callback_data=country_list[8]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[9])].title(), callback_data=country_list[9])]
     ]
     return InlineKeyboardMarkup(inline_markup)
 
@@ -236,12 +259,12 @@ def message(update, context):
                                  reply_markup=ReplyKeyboardRemove())
 
     elif text in country_list:
-        country = text
+        country = text.lower()
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  text=get_data_by_country(country),
                                  parse_mode='html')
 
-    elif text in rus_country_list:
+    elif text.title() in rus_country_list:
         country = text
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  text=get_data_by_country(country),
@@ -268,7 +291,8 @@ dispatcher.add_handler(info_handler)
 message_handler = MessageHandler(Filters.all, message)
 dispatcher.add_handler(message_handler)
 
-buttons_handler = CallbackQueryHandler(callback=inline_keyboard_handler, pass_chat_data=True)
+buttons_handler = CallbackQueryHandler(callback=inline_keyboard_handler,
+                                       pass_chat_data=True)
 dispatcher.add_handler(buttons_handler)
 
 updater.start_polling()

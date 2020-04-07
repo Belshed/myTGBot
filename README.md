@@ -72,3 +72,8 @@ git fetch && git checkout -f origin/master
 ```
 sudo systemctl start tgbot
 ```
+
+Остановить бота:
+```
+sudo systemctl stop tgbot
+```
