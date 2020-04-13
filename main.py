@@ -4,7 +4,7 @@ import time
 import logging
 import requests
 import telegram.ext
-import mysql.connector
+# import mysql.connector
 from covid import Covid
 from threading import Timer
 from bs4 import BeautifulSoup
