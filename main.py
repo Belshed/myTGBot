@@ -4,6 +4,7 @@ import time
 import logging
 import requests
 import telegram.ext
+import mysql.connector
 from covid import Covid
 from threading import Timer
 from bs4 import BeautifulSoup
@@ -218,22 +219,21 @@ def inline_keyboard_handler(update, context):
 
 def start(update, context):
     logger.info(f"Bot started\n {update.effective_chat.id, update.effective_user.first_name}")
-    context.bot.send_sticker(chat_id=update.effective_chat.id,
-                             sticker=open('start_sticker.webp', 'rb'))
+    # context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=open('start_sticker.webp', 'rb'))
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="<b>Эй, " + update.effective_user.first_name + "!" + "\nЯ бот и я работаю!</b>\nДля получения информации нажми \n/info или отправь мне «Инфо»",
+                             text="<b>Эй, " + update.effective_user.first_name + "!" + "\nЯ бот со статистикой по коронавирусу и я работаю!</b>\nДля получения информации нажми \n/info или отправь мне «Инфо»",
                              parse_mode='html')
 
 
 def help(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Если у вас есть предложения по улучшению бота, то напишите мне \n @Belshed",
+                             text="Данные взяты с источников:\nwww.стопкоронавирус.рф\nwww.worldometers.info/coronavirus/\n\nЕсли у вас есть предложения по улучшению бота, то напишите мне \n @Belshed",
                              parse_mode='html')
 
 
 def info(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Данные взяты с источников:\nwww.стопкоронавирус.рф\nwww.worldometers.info/coronavirus/\nЕсли у вас есть предложения по улучшению бота, то напишите мне \n @Belshed\n<b>Выбири что хочешь узнать⬇</b>\n",
+                             text="<b>Выбири что хочешь узнать⬇</b>\n",
                              reply_markup=reply_markup,
                              parse_mode='html')
 
@@ -273,7 +273,7 @@ def message(update, context):
                                  text=get_data_by_country(country),
                                  parse_mode='html')
     elif text == 'месседж':
-        job_minute = job_queue.run_once(send_minute, 1, context=update.effective_chat.id)
+        job_minute = job_queue.run_once(send_message, 1, context=update.effective_chat.id)
     else:
         logger.info(f"Message: {text}")
         context.bot.send_message(chat_id=update.effective_chat.id,
