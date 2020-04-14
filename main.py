@@ -5,7 +5,6 @@ import logging
 import requests
 import telegram.ext
 # import mysql.connector
-from covid import Covid
 from threading import Timer
 from bs4 import BeautifulSoup
 from googletrans import Translator
@@ -19,23 +18,17 @@ from telegram.ext import CallbackQueryHandler, Updater, CommandHandler, MessageH
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Bot Logger')
 
-Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'
+# Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
+Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
 updater = Updater(token=Token, use_context=True)
 job_queue = updater.job_queue
 dispatcher = updater.dispatcher
-
-target_url = 'https://стопкоронавирус.рф'
-
-covid = Covid(source="worldometers")
-response = requests.get(target_url)
-covid_data = covid.get_data()
 
 translator = Translator()
 
 world_pos = 7
 virusData = ""
 country_list = []
-listt = []
 rus_country_list = []
 
 in_emergancy_case = ['Мир', 'США', 'Испания', 'Италия', 'Германия', 'Франция', 'Иран', 'Великобритания', 'Турция', 'Швейцария', 'Бельгия', 'Нидерланды', 'Канада', 'Австрия', 'Бразилия', 'Португалия', 'Южная Корея', 'Израиль', 'Швеция', 'Россия', 'Норвегия', 'Австралия', 'Ирландия', 'Чехия', 'Чили', 'Индия',
@@ -66,21 +59,19 @@ worldometers_info = [
                     "recovered",
                     "deaths"
                     ]
-
+covid_dict = {}
 print('Стартуем!')
 curr_time = time.strftime("%H:%M:%S", time.localtime())
-print(curr_time)
-logger.info(f'Deploying time: {curr_time}')
+logger.info(f' Deploying time: {curr_time}')
 
 '''
 /////////// ФУНКЦИИ ОБНОВЛЕНИЯ ДАННЫХ ///////////
 '''
 
+
 def update_country_list():
     global country_list
     global rus_country_list
-    for elem in covid_data:
-        country_list.append(elem.get('country'))
 
     translations = translator.translate(country_list, dest='ru')
 
@@ -97,33 +88,33 @@ def update_country_list():
 def daemon_covid_update():
     try:
         Timer(1200, daemon_covid_update).start()
-        global covid
-        covid = Covid(source="worldometers")
-        global covid_data
-        covid_data = covid.get_data()
-        global response
-        response = requests.get(target_url)
+        parse_worldometers()
         update_country_list()
         if time.strftime("%H", time.localtime()) == '11':
             pass
-        logger.info(f"{country_list[12]} \n {rus_country_list[12]}")
-        logger.info("Data update done!")
+        logger.info(f" {country_list[12]}, {rus_country_list[12]}")
+        logger.info(" Data update done!")
     except:
-        logger.error("Не удалось обновить данные!")
+        logger.error("Не удалось обновить список стран!")
+
+
+def get_status_by_country_name(country):
+    response = covid_dict.get(country.lower())
+    return response
 
 
 def get_data_by_country(country):
     if country in country_list:
-        country_dict = covid.get_status_by_country_name(country)
+        country_dict = get_status_by_country_name(country)
         data = rus_country_list[country_list.index(country)].title() + '\n\n'
 
     elif country in rus_country_list:
-        country_dict = covid.get_status_by_country_name(country_list[rus_country_list.index(country)])
+        country_dict = get_status_by_country_name(country_list[rus_country_list.index(country)])
         data = country.lower().title() + '\n\n'
 
     else:
-        logger.error(f"{country.title()}-Такой страны не найдено")
-        return f"{country.title()}-Такой страны не найдено"
+        logger.error(f" {country}-Такой страны не найдено")
+        return f" {country}-Такой страны не найдено"
     logger.info(f" Searching {country.title()}")
     i = 1
 
@@ -134,7 +125,43 @@ def get_data_by_country(country):
     return data
 
 
+def parse_worldometers():
+    resp = requests.get("https://www.worldometers.info/coronavirus/")
+    if resp.status_code == 200:
+        page = resp.text
+        html = BeautifulSoup(page, "lxml")
+        table = html.find("table", attrs={"id": "main_table_countries_today"})
+        headers = ["country",
+                   "confirmed",
+                   "new_cases",
+                   "deaths",
+                   "new_deaths",
+                   "recovered",
+                   "active",
+                   "total_tests"
+                   ]
+        rows = table.find('tbody').select('tr')
+
+        def fill_dict(position):
+            i = 0
+            dict = {}
+            while i < 7:
+                dict[headers[i]] = rows[position].find_all('td')[i].text.strip().replace(",", " ").replace("+", "")
+                i += 1
+            dict[headers[i]] = rows[position].find_all('td')[10].text.strip().replace(",", " ").replace("+", "").lower()
+            return dict
+
+        i = world_pos
+        while i < len(rows):
+            covid_dict[rows[i].find_all('td')[0].text.lower()] = fill_dict(i)
+            country_list.append(rows[i].find_all('td')[0].text)
+            i += 1
+
+
 def parse_stopcorona():
+    target_url = 'https://стопкоронавирус.рф'
+
+    response = requests.get(target_url)
     if response.status_code == 200:
         page = response.content
         html = BeautifulSoup(page, 'lxml')
@@ -148,7 +175,7 @@ def parse_stopcorona():
 
         i = 0
         global virusData
-        virusData = ''
+        virusData = 'Россия\n\n'
         for el in countdown_name:
             virusData += str(el) + str(countdown_dict[el]) + '\n'
             i += 1
@@ -157,22 +184,6 @@ def parse_stopcorona():
     else:
         logger.error(f"Parsing Error! <status_code {response.status_code}>")
         return f"Parsing Error! <status_code {response.status_code}>"
-
-
-def get_global_virus_data():
-    global global_statistic_dict
-    global_statistic_dict.update({countdown_name[1]: covid_data[world_pos].get(worldometers_info[0]),
-                                  countdown_name[2]: covid_data[world_pos].get(worldometers_info[1]),
-                                  countdown_name[3]: covid_data[world_pos].get(worldometers_info[2]),
-                                  countdown_name[4]: covid_data[world_pos].get(worldometers_info[3])
-                                  })
-    i = 1
-    global globalVirusData
-    globalVirusData = ''
-    while i < (len(countdown_name)):
-        globalVirusData += str(countdown_name[i]) + str(global_statistic_dict[countdown_name[i]]) + '\n'
-        i += 1
-    return globalVirusData
 
 
 '''
@@ -189,11 +200,11 @@ reply_markup = ReplyKeyboardMarkup(
 
 def get_inline_keyboard():
     inline_markup = [
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index('russia')].title(), callback_data='russia'), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[8])].title(), callback_data=country_list[8])],
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[9])].title(), callback_data=country_list[9]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[10])].title(), callback_data=country_list[10])],
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[11])].title(), callback_data=country_list[11]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[12])].title(), callback_data=country_list[12])],
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[13])].title(), callback_data=country_list[13]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[14])].title(), callback_data=country_list[14])],
-                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[15])].title(), callback_data=country_list[15]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[16])].title(), callback_data=country_list[16])]
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index('russia')].title(), callback_data='russia'), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[1])].upper(), callback_data=country_list[1])],
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[2])].title(), callback_data=country_list[2]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[3])].title(), callback_data=country_list[3])],
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[4])].title(), callback_data=country_list[4]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[5])].title(), callback_data=country_list[5])],
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[6])].title(), callback_data=country_list[6]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[7])].title(), callback_data=country_list[7])],
+                        [InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[8])].title(), callback_data=country_list[8]), InlineKeyboardButton(text=rus_country_list[country_list.index(country_list[9])].title(), callback_data=country_list[9])]
     ]
     return InlineKeyboardMarkup(inline_markup)
 
@@ -208,7 +219,6 @@ def inline_keyboard_handler(update, context):
     data = query.data
 
     chat_id = update.effective_chat.id
-    text = update.effective_message.text
     if data in country_list:
         country = data
         context.bot.send_message(chat_id=chat_id,
@@ -225,7 +235,7 @@ def start(update, context):
                              parse_mode='html')
 
 
-def help(update, context):
+def about(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id,
                              text="Данные взяты с источников:\nwww.стопкоронавирус.рф\nwww.worldometers.info/coronavirus/\n\nЕсли у вас есть предложения по улучшению бота, то напишите мне \n @Belshed",
                              parse_mode='html')
@@ -245,7 +255,7 @@ def message(update, context):
 
     elif text == 'инфо по миру':
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text=get_global_virus_data())
+                                 text=get_data_by_country('world'))
 
     elif text == 'инфо по россии':
         context.bot.send_message(chat_id=update.effective_chat.id,
@@ -273,9 +283,9 @@ def message(update, context):
                                  text=get_data_by_country(country),
                                  parse_mode='html')
     elif text == 'месседж':
-        job_minute = job_queue.run_once(send_message, 1, context=update.effective_chat.id)
+        job_queue.run_once(send_message, 1, context=update.effective_chat.id)
     else:
-        logger.info(f"Message: {text}")
+        logger.info(f" Message: {text}")
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  text="<b>Эй, " + update.effective_user.first_name + "!</b>\n" + "Ты написал(-а): <b>" + update.message.text + "</b>",
                                  parse_mode='html')
@@ -288,7 +298,7 @@ daemon_covid_update()
 start_handler = CommandHandler('start', start)
 dispatcher.add_handler(start_handler)
 
-help_handler = CommandHandler('help', help)
+help_handler = CommandHandler('about', about)
 dispatcher.add_handler(help_handler)
 
 info_handler = CommandHandler('info', info)
