@@ -59,6 +59,7 @@ worldometers_info = [
                     "recovered",
                     "deaths"
                     ]
+
 covid_dict = {}
 print('Стартуем!')
 curr_time = time.strftime("%H:%M:%S", time.localtime())
@@ -197,6 +198,10 @@ reply_markup = ReplyKeyboardMarkup(
              ]
             ], resize_keyboard=True)
 
+def get_sourses_markup():
+    souses_markup = [[InlineKeyboardButton(text='WorldoMeters', url='www.worldometers.info/coronavirus/'), InlineKeyboardButton(text='СтопКоронавирус', url='www.стопкоронавирус.рф')]]
+    return InlineKeyboardMarkup(souses_markup)
+
 
 def get_inline_keyboard():
     inline_markup = [
@@ -229,7 +234,6 @@ def inline_keyboard_handler(update, context):
 
 def start(update, context):
     logger.info(f"Bot started\n {update.effective_chat.id, update.effective_user.first_name}")
-    # context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=open('start_sticker.webp', 'rb'))
     context.bot.send_message(chat_id=update.effective_chat.id,
                              text="<b>Эй, " + update.effective_user.first_name + "!" + "\nЯ бот со статистикой по коронавирусу и я работаю!</b>\nДля получения информации нажми \n/info или отправь мне «Инфо»",
                              parse_mode='html')
@@ -237,7 +241,8 @@ def start(update, context):
 
 def about(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Данные взяты с источников:\nwww.стопкоронавирус.рф\nwww.worldometers.info/coronavirus/\n\nЕсли у вас есть предложения по улучшению бота, то напишите мне \n @Belshed",
+                             text="Если у вас есть предложения по улучшению бота, то напишите мне: @Belshed \nДанные взяты с источников⬇",
+                             reply_markup=get_sourses_markup(),
                              parse_mode='html')
 
 
@@ -266,11 +271,6 @@ def message(update, context):
                                  text="Выбери страну ⬇\nИли введи ее самостоятельно",
                                  reply_markup=get_inline_keyboard())
 
-    elif text == 'ывпреврывапыупупё':
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text="Возвращаемся назад",
-                                 reply_markup=ReplyKeyboardRemove())
-
     elif text in country_list:
         country = text
         context.bot.send_message(chat_id=update.effective_chat.id,
@@ -284,6 +284,7 @@ def message(update, context):
                                  parse_mode='html')
     elif text == 'месседж':
         job_queue.run_once(send_message, 1, context=update.effective_chat.id)
+
     else:
         logger.info(f" Message: {text}")
         context.bot.send_message(chat_id=update.effective_chat.id,
