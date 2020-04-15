@@ -4,6 +4,7 @@ import time
 import logging
 import requests
 import telegram.ext
+from numpy import random
 # import mysql.connector
 from threading import Timer
 from bs4 import BeautifulSoup
@@ -18,13 +19,12 @@ from telegram.ext import CallbackQueryHandler, Updater, CommandHandler, MessageH
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Bot Logger')
 
-# Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
-Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
+Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
+# Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
 updater = Updater(token=Token, use_context=True)
 job_queue = updater.job_queue
 dispatcher = updater.dispatcher
-
-translator = Translator()
+proxy_dict = {}
 
 world_pos = 7
 virusData = ""
@@ -61,6 +61,7 @@ worldometers_info = [
                     ]
 
 covid_dict = {}
+socks_arr = []
 print('Стартуем!')
 curr_time = time.strftime("%H:%M:%S", time.localtime())
 logger.info(f' Deploying time: {curr_time}')
@@ -70,10 +71,16 @@ logger.info(f' Deploying time: {curr_time}')
 '''
 
 
+def get_random_proxy():
+    parse_proxy_site()
+    proxy_dict['http'] = socks_arr[random.randint(len(socks_arr))]
+    return proxy_dict
+
+
 def update_country_list():
     global country_list
     global rus_country_list
-
+    translator = Translator(proxies=get_random_proxy())
     translations = translator.translate(country_list, dest='ru')
 
     for translation in translations:
@@ -93,7 +100,8 @@ def daemon_covid_update():
         update_country_list()
         if time.strftime("%H", time.localtime()) == '11':
             pass
-        logger.info(f" {country_list[12]}, {rus_country_list[12]}")
+        rand = random.randint(len(country_list))
+        logger.info(f" {country_list[rand]}, {rus_country_list[rand]}")
         logger.info(" Data update done!")
     except:
         logger.error("Не удалось обновить список стран!")
@@ -127,7 +135,7 @@ def get_data_by_country(country):
 
 
 def parse_worldometers():
-    resp = requests.get("https://www.worldometers.info/coronavirus/")
+    resp = requests.get("https://www.worldometers.info/coronavirus/", proxies=get_random_proxy())
     if resp.status_code == 200:
         page = resp.text
         html = BeautifulSoup(page, "lxml")
@@ -157,12 +165,13 @@ def parse_worldometers():
             covid_dict[rows[i].find_all('td')[0].text.lower()] = fill_dict(i)
             country_list.append(rows[i].find_all('td')[0].text)
             i += 1
+        resp.close()
 
 
 def parse_stopcorona():
     target_url = 'https://стопкоронавирус.рф'
 
-    response = requests.get(target_url)
+    response = requests.get(target_url, proxies=get_random_proxy())
     if response.status_code == 200:
         page = response.content
         html = BeautifulSoup(page, 'lxml')
@@ -181,10 +190,30 @@ def parse_stopcorona():
             virusData += str(el) + str(countdown_dict[el]) + '\n'
             i += 1
         logger.info(f"Parsing {target_url} done!")
+        response.close()
         return virusData
     else:
         logger.error(f"Parsing Error! <status_code {response.status_code}>")
         return f"Parsing Error! <status_code {response.status_code}>"
+
+
+def parse_proxy_site():
+    url = 'https://2ip.ru/proxy/'
+    session = requests.Session()
+    session.headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36 OPR/67.0.3575.115',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+    }
+    response = session.get(url=url)
+    if response.status_code == 200:
+        page = response.content
+        html = BeautifulSoup(page, 'lxml')
+        table = html.find('table')
+        rows = table.find_all('tr')
+        for row in rows:
+            if row.find('img', attrs={'alt': 'ON'}):
+                socks_arr.append(row.find('td').text.split()[0])
+        response.close()
 
 
 '''
@@ -197,6 +226,7 @@ reply_markup = ReplyKeyboardMarkup(
             [KeyboardButton(text='Инфо по стране')  # , KeyboardButton(text='Месседж')
              ]
             ], resize_keyboard=True)
+
 
 def get_sourses_markup():
     souses_markup = [[InlineKeyboardButton(text='WorldoMeters', url='www.worldometers.info/coronavirus/'), InlineKeyboardButton(text='СтопКоронавирус', url='www.стопкоронавирус.рф')]]
@@ -241,7 +271,7 @@ def start(update, context):
 
 def about(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id,
-                             text="Если у вас есть предложения по улучшению бота, то напишите мне: @Belshed \nДанные взяты с источников⬇",
+                             text="Если у вас есть предложения по улучшению бота, то напишите мне: @Belshed\n\nДанные взяты с источников⬇",
                              reply_markup=get_sourses_markup(),
                              parse_mode='html')
 
@@ -293,8 +323,6 @@ def message(update, context):
 
 
 daemon_covid_update()
-
-# job_minute = job_queue.run_repeating(send_minute, interval=60, first=0)
 
 start_handler = CommandHandler('start', start)
 dispatcher.add_handler(start_handler)
