@@ -19,8 +19,8 @@ from telegram.ext import CallbackQueryHandler, Updater, CommandHandler, MessageH
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Bot Logger')
 
-Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
-# Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
+# Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
+Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
 updater = Updater(token=Token, use_context=True)
 job_queue = updater.job_queue
 dispatcher = updater.dispatcher
@@ -71,16 +71,10 @@ logger.info(f' Deploying time: {curr_time}')
 '''
 
 
-def get_random_proxy():
-    parse_proxy_site()
-    proxy_dict['http'] = socks_arr[random.randint(len(socks_arr))]
-    return proxy_dict
-
-
 def update_country_list():
     global country_list
     global rus_country_list
-    translator = Translator(proxies=get_random_proxy())
+    translator = Translator()
     translations = translator.translate(country_list, dest='ru')
 
     for translation in translations:
@@ -135,7 +129,7 @@ def get_data_by_country(country):
 
 
 def parse_worldometers():
-    resp = requests.get("https://www.worldometers.info/coronavirus/", proxies=get_random_proxy())
+    resp = requests.get("https://www.worldometers.info/coronavirus/")
     if resp.status_code == 200:
         page = resp.text
         html = BeautifulSoup(page, "lxml")
@@ -165,13 +159,12 @@ def parse_worldometers():
             covid_dict[rows[i].find_all('td')[0].text.lower()] = fill_dict(i)
             country_list.append(rows[i].find_all('td')[0].text)
             i += 1
-        resp.close()
 
 
 def parse_stopcorona():
     target_url = 'https://стопкоронавирус.рф'
 
-    response = requests.get(target_url, proxies=get_random_proxy())
+    response = requests.get(target_url)
     if response.status_code == 200:
         page = response.content
         html = BeautifulSoup(page, 'lxml')
@@ -259,7 +252,7 @@ def inline_keyboard_handler(update, context):
         context.bot.send_message(chat_id=chat_id,
                                  text=get_data_by_country(country))
     else:
-        print(data, "---Такой страны не найдено")
+        logger.error(data, "---Такой страны не найдено")
 
 
 def start(update, context):
