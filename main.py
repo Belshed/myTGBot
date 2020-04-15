@@ -74,17 +74,23 @@ logger.info(f' Deploying time: {curr_time}')
 def update_country_list():
     global country_list
     global rus_country_list
-    translator = Translator()
-    translations = translator.translate(country_list, dest='ru')
+    try:
+        try:
+            translator = Translator()
+            translations = translator.translate(country_list, dest='ru')
+        except:
+            logger.error("Ошибка в переводе!")
 
-    for translation in translations:
-        if translation.text == 'индюк':
-            rus_country_list.append('турция')
-        else:
-            rus_country_list.append(translation.text.lower())
+        for translation in translations:
+            if translation.text == 'индюк':
+                rus_country_list.append('турция')
+            else:
+                rus_country_list.append(translation.text.lower())
 
-    for country in country_list:
-        country_list[country_list.index(country)] = country.lower()
+        for country in country_list:
+            country_list[country_list.index(country)] = country.lower()
+    except:
+        logger.error("Ошибка в составлении списков стран!")
 
 
 def daemon_covid_update():
