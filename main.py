@@ -31,7 +31,7 @@ virusData = ""
 country_list = []
 rus_country_list = []
 
-in_emergancy_case = ['Мир', 'США', 'Испания', 'Италия', 'Германия', 'Франция', 'Иран', 'Великобритания', 'Турция', 'Швейцария', 'Бельгия', 'Нидерланды', 'Канада', 'Австрия', 'Бразилия', 'Португалия', 'Южная Корея', 'Израиль', 'Швеция', 'Россия', 'Норвегия', 'Австралия', 'Ирландия', 'Чехия', 'Чили', 'Индия',
+in_emergency_case = ['Мир', 'США', 'Испания', 'Италия', 'Германия', 'Франция', 'Иран', 'Великобритания', 'Турция', 'Швейцария', 'Бельгия', 'Нидерланды', 'Канада', 'Австрия', 'Бразилия', 'Португалия', 'Южная Корея', 'Израиль', 'Швеция', 'Россия', 'Норвегия', 'Австралия', 'Ирландия', 'Чехия', 'Чили', 'Индия',
                      'Дания', 'Польша', 'Румыния', 'Малайзия', 'Пакистан', 'Эквадор', 'Филиппины', 'Япония', 'Люксембург', 'Саудовская Аравия', 'Перу', 'Индонезия', 'Таиланд', 'Сербия', 'Финляндия', 'Мексика', 'ОАЭ', 'Панама', 'Катар', 'Доминиканская Республика', 'Греция', 'Южная Африка', 'Колумбия', 'Исландия',
                      'Аргентина', 'Алжир', 'Сингапур', 'Египет', 'Украина', 'Хорватия', 'Марокко', 'Эстония', 'Новая Зеландия', 'Ирак', 'Словения', 'Молдова', 'Гонконг', 'Литва', 'Армения', 'Бахрейн', 'Венгрия', 'Алмазная принцесса', 'Беларусь', 'Босния и Герцеговина', 'Кувейт', 'Казахстан', 'Камерун', 'Азербайджан',
                      'Тунис', 'Северная Македония', 'Болгария', 'Латвия', 'Ливан', 'Словакия', 'Андорра', 'Коста Рика', 'Кипр', 'Узбекистан', 'Уругвай', 'Албания', 'Тайвань', 'Катар', 'Буркина Фасо', 'Куба', 'Иордания', 'Реюньон', 'Оман', 'Нормандские острова', "Кот д'Ивуар", 'Гондурас', 'Сан-Марино', 'Палестина', 'Нигер',
@@ -130,7 +130,7 @@ def get_data_by_country(country):
 
 def parse_worldometers():
     resp = requests.get("https://www.worldometers.info/coronavirus/")
-    if resp.status_code == 200:
+    try:
         page = resp.text
         html = BeautifulSoup(page, "lxml")
         table = html.find("table", attrs={"id": "main_table_countries_today"})
@@ -159,13 +159,15 @@ def parse_worldometers():
             covid_dict[rows[i].find_all('td')[0].text.lower()] = fill_dict(i)
             country_list.append(rows[i].find_all('td')[0].text)
             i += 1
+    except:
+        logger.error("Ошибка парсинга Worldometers")
 
 
 def parse_stopcorona():
     target_url = 'https://стопкоронавирус.рф'
 
     response = requests.get(target_url)
-    if response.status_code == 200:
+    try:
         page = response.content
         html = BeautifulSoup(page, 'lxml')
 
@@ -185,7 +187,7 @@ def parse_stopcorona():
         logger.info(f"Parsing {target_url} done!")
         response.close()
         return virusData
-    else:
+    except:
         logger.error(f"Parsing Error! <status_code {response.status_code}>")
         return f"Parsing Error! <status_code {response.status_code}>"
 
@@ -221,7 +223,7 @@ reply_markup = ReplyKeyboardMarkup(
             ], resize_keyboard=True)
 
 
-def get_sourses_markup():
+def get_sources_markup():
     souses_markup = [[InlineKeyboardButton(text='WorldoMeters', url='www.worldometers.info/coronavirus/'), InlineKeyboardButton(text='СтопКоронавирус', url='www.стопкоронавирус.рф')]]
     return InlineKeyboardMarkup(souses_markup)
 
@@ -265,7 +267,7 @@ def start(update, context):
 def about(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id,
                              text="Если у вас есть предложения по улучшению бота, то напишите мне: @Belshed\n\nДанные взяты с источников⬇",
-                             reply_markup=get_sourses_markup(),
+                             reply_markup=get_sources_markup(),
                              parse_mode='html')
 
 
