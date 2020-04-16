@@ -19,8 +19,8 @@ from telegram.ext import CallbackQueryHandler, Updater, CommandHandler, MessageH
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Bot Logger')
 
-# Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
-Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
+Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
+# Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
 updater = Updater(token=Token, use_context=True)
 job_queue = updater.job_queue
 dispatcher = updater.dispatcher
@@ -95,7 +95,7 @@ def update_country_list():
 
 def daemon_covid_update():
     try:
-        Timer(1200, daemon_covid_update).start()
+        Timer(3600, daemon_covid_update).start()
         parse_worldometers()
         update_country_list()
         if time.strftime("%H", time.localtime()) == '11':
@@ -214,7 +214,6 @@ def parse_proxy_site():
         for row in rows:
             if row.find('img', attrs={'alt': 'ON'}):
                 socks_arr.append(row.find('td').text.split()[0])
-        response.close()
 
 
 '''
