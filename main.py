@@ -111,17 +111,14 @@ def update_country_list():
 
 
 def daemon_covid_update():
-    try:
-        Timer(3600, daemon_covid_update).start()
-        parse_worldometers()
-        update_country_list()
-        if time.strftime("%H", time.localtime()) == '11':
-            pass
-        rand = random.randint(len(country_list))
-        logger.info(f" {country_list[rand]}, {rus_country_list[rand]}")
-        logger.info(" Data update done!")
-    except:
-        logger.error("Не удалось обновить список стран!")
+    Timer(3600, daemon_covid_update).start()
+    parse_worldometers()
+    update_country_list()
+    if time.strftime("%H", time.localtime()) == '11':
+        pass
+    rand = random.randint(len(country_list))
+    logger.info(f" {country_list[rand]}, {rus_country_list[rand]}")
+    logger.info(" Data update done!")
 
 
 def get_status_by_country_name(country):
