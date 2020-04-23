@@ -1,5 +1,4 @@
 # coding: utf8
-import lxml
 import time
 import logging
 import requests
@@ -8,7 +7,6 @@ from numpy import random
 # import mysql.connector
 from threading import Timer
 from bs4 import BeautifulSoup
-from googletrans import Translator
 from telegram import KeyboardButton
 from telegram import ReplyKeyboardMarkup
 from telegram import ReplyKeyboardRemove
@@ -19,8 +17,11 @@ from telegram.ext import CallbackQueryHandler, Updater, CommandHandler, MessageH
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Bot Logger')
 
-Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
-# Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
+# Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
+Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
+key = 'trnsl.1.1.20200423T190856Z.24eca77935c90552.f3fcbb20deda0ee7992f70687c290b13a93e0d66'
+translate_url = "https://translate.yandex.net/api/v1.5/tr.json/translate"
+
 updater = Updater(token=Token, use_context=True)
 job_queue = updater.job_queue
 dispatcher = updater.dispatcher
@@ -71,43 +72,37 @@ logger.info(f' Deploying time: {curr_time}')
 '''
 
 
-def update_country_list1():
+def ya_translate(text):
+
+    params = {
+        "key": key,
+        "text": text,
+        "lang": 'en-ru'
+    }
+    response = requests.get(translate_url, params=params)
+    return response.json().get("text")
+
+
+def update_country_list():
+
     global country_list
     global rus_country_list
     try:
         try:
-            translator = Translator()
-            translations = translator.translate(country_list, dest='ru')
+            translations = ya_translate(country_list)
         except:
             logger.error("Ошибка в переводе!")
 
         for translation in translations:
-            if translation.text == 'индюк':
+            '''if translation.text == 'индюк':
                 rus_country_list.append('турция')
-            else:
-                rus_country_list.append(translation.text.lower())
-
+            else:'''
+            rus_country_list.append(translation.lower())
+        print(rus_country_list)
         for country in country_list:
             country_list[country_list.index(country)] = country.lower()
     except:
         logger.error("Ошибка в составлении списков стран!")
-
-
-def update_country_list():
-    global country_list
-    global rus_country_list
-
-    translator = Translator()
-    translations = translator.translate(country_list, dest='ru')
-
-    for translation in translations:
-        if translation.text == 'индюк':
-            rus_country_list.append('турция')
-        else:
-            rus_country_list.append(translation.text.lower())
-
-    for country in country_list:
-        country_list[country_list.index(country)] = country.lower()
 
 
 def daemon_covid_update():
