@@ -14,11 +14,17 @@ from telegram import InlineKeyboardMarkup
 from telegram import InlineKeyboardButton
 from telegram.ext import CallbackQueryHandler, Updater, CommandHandler, MessageHandler, Filters
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d-%b %H:%M:%S')
 logger = logging.getLogger('Bot Logger')
 
-# Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
-Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
+fh = logging.FileHandler('bot_logs.log', mode='w')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d-%b %H:%M:%S')
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+
+
+Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
+# Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
 key = 'trnsl.1.1.20200423T190856Z.24eca77935c90552.f3fcbb20deda0ee7992f70687c290b13a93e0d66'
 translate_url = "https://translate.yandex.net/api/v1.5/tr.json/translate"
 
@@ -31,16 +37,6 @@ world_pos = 7
 virusData = ""
 country_list = []
 rus_country_list = []
-
-in_emergency_case = ['Мир', 'США', 'Испания', 'Италия', 'Германия', 'Франция', 'Иран', 'Великобритания', 'Турция', 'Швейцария', 'Бельгия', 'Нидерланды', 'Канада', 'Австрия', 'Бразилия', 'Португалия', 'Южная Корея', 'Израиль', 'Швеция', 'Россия', 'Норвегия', 'Австралия', 'Ирландия', 'Чехия', 'Чили', 'Индия',
-                     'Дания', 'Польша', 'Румыния', 'Малайзия', 'Пакистан', 'Эквадор', 'Филиппины', 'Япония', 'Люксембург', 'Саудовская Аравия', 'Перу', 'Индонезия', 'Таиланд', 'Сербия', 'Финляндия', 'Мексика', 'ОАЭ', 'Панама', 'Катар', 'Доминиканская Республика', 'Греция', 'Южная Африка', 'Колумбия', 'Исландия',
-                     'Аргентина', 'Алжир', 'Сингапур', 'Египет', 'Украина', 'Хорватия', 'Марокко', 'Эстония', 'Новая Зеландия', 'Ирак', 'Словения', 'Молдова', 'Гонконг', 'Литва', 'Армения', 'Бахрейн', 'Венгрия', 'Алмазная принцесса', 'Беларусь', 'Босния и Герцеговина', 'Кувейт', 'Казахстан', 'Камерун', 'Азербайджан',
-                     'Тунис', 'Северная Македония', 'Болгария', 'Латвия', 'Ливан', 'Словакия', 'Андорра', 'Коста Рика', 'Кипр', 'Узбекистан', 'Уругвай', 'Албания', 'Тайвань', 'Катар', 'Буркина Фасо', 'Куба', 'Иордания', 'Реюньон', 'Оман', 'Нормандские острова', "Кот д'Ивуар", 'Гондурас', 'Сан-Марино', 'Палестина', 'Нигер',
-                     'Вьетнам', 'Маврикий', 'Мальта', 'Нигерия', 'Черногория', 'Сенегал', 'Киргизия', 'Гана', 'Грузия', 'Боливия', 'Фарерские острова', 'Шри Ланка', 'Венесуэла', 'ДРК', 'Кения', 'Мартиника', 'Майотта', 'Остров Мэн', 'Гваделупа', 'Бруней', 'Генуа', 'Бангладеш', 'Камбоджа', 'Парагвай', 'Гибралтар', 'Тринидад и Тобаго',
-                     'Руанда', 'Джибути', 'Мадагаскар', 'Лихтенштейн', 'Монако', 'Французская Гвиана', 'Аруба', 'Гватемала', 'Сальвадор', 'Барбадос', 'Ямайка', 'Того', 'Уганда', 'Мали', 'Конго', 'Эфиопия', 'Макао', 'Французская Полинезия', 'Бермудские острова', 'Каймановы острова', 'Замбия', 'Синт-Маартен', 'Сен-Мартен', 'Гайана', 'Эритрея',
-                     'Багамские острова', 'Бенин', 'Габон', 'Гаити', 'Танзания', 'Мьянма', 'Сирия', 'Ливия', 'Мальдивы', 'Гвинея-Бисау', 'Новая Каледония', 'Ангола', 'Экваториальная Гвинея', 'Намибия', 'Антигуа и Барбуда', 'Доминика', 'Монголия', 'Либерия', 'Фиджи', 'Сент-Люсия', 'Кюрасао', 'Судан', 'Гренада', 'Лаос', 'Гренландия', 'Сейшельские острова',
-                     'Суринам', 'Зимбабве', 'Мозамбик', 'Сент-Китс и Невис', 'Eswatini', 'М.С. Зандам', 'Непал', 'Чад', 'Теркс и Кайкос', 'ЦАР', 'Белиз', 'Кабо Верде', 'Ватикан', 'Сент-Винсент и Гренадины', 'Сомали', 'Ботсвана', 'Мавритания', 'Никарагуа', 'Монсеррат', 'Сен-Барт', 'Сьерра-Леоне', 'Бутан', 'Малави', 'Гамбия', 'Сан-Томе и Принсипи', 'Западная Сахара',
-                     'Ангилья', 'Британские Виргинские острова', 'Бурунди', 'Карибские острова Нидерланды', 'Фолклендские острова', 'Папуа - Новая Гвинея', 'Saint Pierre & Miquelon', 'Южный Судан', 'Восточный Тимор', 'Китай']
 
 countdown_dict = {}
 globalVirusData = ""
@@ -63,7 +59,8 @@ worldometers_info = [
 
 covid_dict = {}
 socks_arr = []
-print('Стартуем!')
+
+logger.info('Стартуем!')
 curr_time = time.strftime("%H:%M:%S", time.localtime())
 logger.info(f' Deploying time: {curr_time}')
 
@@ -91,18 +88,17 @@ def update_country_list():
         try:
             translations = ya_translate(country_list)
         except:
-            logger.error("Ошибка в переводе!")
+            logger.error("Ошибка в переводе!", exc_info=True)
 
         for translation in translations:
             '''if translation.text == 'индюк':
                 rus_country_list.append('турция')
             else:'''
             rus_country_list.append(translation.lower())
-        print(rus_country_list)
         for country in country_list:
             country_list[country_list.index(country)] = country.lower()
     except:
-        logger.error("Ошибка в составлении списков стран!")
+        logger.error("Ошибка в составлении списков стран!", exc_info=True)
 
 
 def daemon_covid_update():
@@ -174,8 +170,9 @@ def parse_worldometers():
             covid_dict[rows[i].find_all('td')[0].text.lower()] = fill_dict(i)
             country_list.append(rows[i].find_all('td')[0].text)
             i += 1
+        logger.info("Worldometers parsed!")
     except:
-        logger.error("Ошибка парсинга Worldometers")
+        logger.error("Ошибка парсинга Worldometers", exc_info=True)
 
 
 def parse_stopcorona():
@@ -199,11 +196,11 @@ def parse_stopcorona():
         for el in countdown_name:
             virusData += str(el) + str(countdown_dict[el]) + '\n'
             i += 1
-        logger.info(f"Parsing {target_url} done!")
+        logger.info("StopCorona parsed!")
         response.close()
         return virusData
     except:
-        logger.error(f"Parsing Error! <status_code {response.status_code}>")
+        logger.error(f"Parsing Error! <status_code {response.status_code}>", exc_info=True)
         return f"Parsing Error! <status_code {response.status_code}>"
 
 
