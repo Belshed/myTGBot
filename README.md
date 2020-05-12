@@ -26,7 +26,7 @@ git clone https://github.com/Belshed/РЕПОЗИТОРИЙ
 
 Создать вирутальное окружение:
 ```
-cd /home/serge/tele_bot
+cd /home/serge/ПАПКА С БОТОМ
 python3 -m venv .venv
 ```
 

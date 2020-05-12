@@ -85,15 +85,15 @@ def update_country_list():
     global country_list
     global rus_country_list
     try:
+        translations = []
         try:
             translations = ya_translate(country_list)
         except:
             logger.error("Ошибка в переводе!", exc_info=True)
-
+            rus_country_list = []
+            country_list = []
+            
         for translation in translations:
-            '''if translation.text == 'индюк':
-                rus_country_list.append('турция')
-            else:'''
             rus_country_list.append(translation.lower())
         for country in country_list:
             country_list[country_list.index(country)] = country.lower()
