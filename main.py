@@ -90,9 +90,9 @@ def update_country_list():
             translations = ya_translate(country_list)
         except:
             logger.error("Ошибка в переводе!", exc_info=True)
-            rus_country_list = []
-            country_list = []
-            
+        rus_country_list = []
+        country_list = []
+
         for translation in translations:
             rus_country_list.append(translation.lower())
         for country in country_list:
