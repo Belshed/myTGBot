@@ -4,7 +4,6 @@ import logging
 import requests
 import telegram.ext
 from numpy import random
-# import mysql.connector
 from threading import Timer
 from bs4 import BeautifulSoup
 from telegram import KeyboardButton
@@ -90,8 +89,6 @@ def update_country_list():
             translations = ya_translate(country_list)
         except:
             logger.error("Ошибка в переводе!", exc_info=True)
-        rus_country_list = []
-        country_list = []
 
         for translation in translations:
             rus_country_list.append(translation.lower())
@@ -109,7 +106,7 @@ def daemon_covid_update():
         pass
     rand = random.randint(len(country_list))
     logger.info(f" {country_list[rand]}, {rus_country_list[rand]}")
-    logger.info(" Data update done!")
+    logger.info(" Bot is active!")
 
 
 def get_status_by_country_name(country):
@@ -160,15 +157,15 @@ def parse_worldometers():
             i = 0
             dict = {}
             while i < 7:
-                dict[headers[i]] = rows[position].find_all('td')[i].text.strip().replace(",", " ").replace("+", "")
+                dict[headers[i]] = rows[position].find_all('td')[i + 1].text.strip().replace(",", " ").replace("+", "")
                 i += 1
             dict[headers[i]] = rows[position].find_all('td')[10].text.strip().replace(",", " ").replace("+", "").lower()
             return dict
 
         i = world_pos
         while i < len(rows):
-            covid_dict[rows[i].find_all('td')[0].text.lower()] = fill_dict(i)
-            country_list.append(rows[i].find_all('td')[0].text)
+            covid_dict[rows[i].find_all('td')[1].text.lower()] = fill_dict(i)
+            country_list.append(rows[i].find_all('td')[1].text)
             i += 1
         logger.info("Worldometers parsed!")
     except:
