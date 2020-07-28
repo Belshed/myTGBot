@@ -22,8 +22,8 @@ fh.setFormatter(formatter)
 logger.addHandler(fh)
 
 
-Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot
-# Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
+# Token = '1078084297:AAGhNxLhFkhinnZNozIowvp42CxZSrGCLqs'  # Old Bot#
+Token = '1283232360:AAGboP5rZqefNicAolAa2h0lPJYSeN_ewws'  # New Bot
 key = 'trnsl.1.1.20200423T190856Z.24eca77935c90552.f3fcbb20deda0ee7992f70687c290b13a93e0d66'
 translate_url = "https://translate.yandex.net/api/v1.5/tr.json/translate"
 
